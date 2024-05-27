@@ -34,10 +34,10 @@ app.get('/', async (req, res) => {
 // Define the /newOrder route
 app.post('/newOrder', async (req, res) => {
     try {
-        const orders = req.body.orders;
+        const orders = req.body;
 
         const savedOrders = [];
-        console.log(req.body)
+        console.log(orders)
         for (const orderData of orders) {
             const shippingTitle = orderData.shipping_lines[0].title;
             const shippingMethod = shippingTitle.includes("שליח עד הבית") ? 1 : 2;
