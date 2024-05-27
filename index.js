@@ -53,6 +53,7 @@ app.post('/newOrder', async (req, res) => {
 
         res.status(201).send({ message: 'Orders saved successfully', savedOrders });
     } catch (error) {
+        console.log(error)
         res.status(500).send({ error: 'Failed to save orders' });
     }
 });
