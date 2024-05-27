@@ -34,11 +34,8 @@ app.get('/', async (req, res) => {
 // Define the /newOrder route
 app.post('/newOrder', async (req, res) => {
     try {
-        const orders = req.body;
+        const orderData = req.body;
 
-        const savedOrders = [];
-        console.log(req.body)
-        for (const orderData of orders) {
             const shippingTitle = orderData.shipping_lines[0].title;
             const shippingMethod = shippingTitle.includes("שליח עד הבית") ? 1 : 2;
 
@@ -51,13 +48,11 @@ app.post('/newOrder', async (req, res) => {
             });
 
             const savedOrder = await newOrder.save();
-            savedOrders.push({ order: savedOrder, shippingMethod });
-        }
 
-        res.status(201).send({ message: 'Orders saved successfully', savedOrders });
+            res.status(201).send({ message: 'Order saved successfully', savedOrder});
     } catch (error) {
         console.log(error)
-        res.status(500).send({ error: 'Failed to save orders' });
+        res.status(500).send({ error: 'Failed to save order' });
     }
 });
 
