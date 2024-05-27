@@ -48,7 +48,7 @@ app.post('/newOrder', async (req, res) => {
             });
 
             const savedOrder = await newOrder.save();
-
+            console.log(savedOrder)
             res.status(201).send({ message: 'Order saved successfully', savedOrder});
     } catch (error) {
         console.log(error)
