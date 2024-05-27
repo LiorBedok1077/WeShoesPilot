@@ -34,7 +34,7 @@ app.post('/newOrder', async (req, res) => {
         const orders = req.body.orders;
 
         const savedOrders = [];
-
+        console.log(orders)
         for (const orderData of orders) {
             const shippingTitle = orderData.shipping_lines[0].title;
             const shippingMethod = shippingTitle.includes("שליח עד הבית") ? 1 : 2;
