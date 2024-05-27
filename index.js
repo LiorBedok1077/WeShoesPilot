@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+var bodyParser = require('body-parser')
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/orders', { useNewUrlParser: true, useUnifiedTopology: true })
@@ -22,7 +23,9 @@ const Order = mongoose.model('Order', orderSchema);
 const app = express();
 app.use(express.json());
 app.use(cors());
-
+app.use(bodyParser.urlencoded({
+    extended: true
+  }));
 
 app.get('/', async (req, res) => {
     res.send("Default Page")
