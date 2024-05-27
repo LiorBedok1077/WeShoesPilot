@@ -2,6 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 var bodyParser = require('body-parser')
+var cron = require('node-cron');
+var axios = require("axios")
+
 require("dotenv").config()
 
 // Connect to MongoDB
@@ -36,7 +39,7 @@ app.get('/', async (req, res) => {
 app.post('/newOrder', async (req, res) => {
     try {
         const orderData = req.body;
-
+        console.log(orderData)
             const shippingTitle = orderData.shipping_lines.title ?? orderData.shipping_lines[0].title;
             const shippingMethod = shippingTitle.includes("שליח עד הבית") ? 1 : 2;
 
@@ -50,7 +53,7 @@ app.post('/newOrder', async (req, res) => {
 
             const savedOrder = await newOrder.save();
             console.log(savedOrder)
-            res.status(201).send({ message: 'Order saved successfully', savedOrder});
+            res.status(201).send({ message: 'Order saved successfully'});
     } catch (error) {
         console.log(error)
         res.status(500).send({ error: 'Failed to save order' });
@@ -62,3 +65,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+cron.schedule('* * * * * *', () => {
+    console.log('running a task every minute');
+  });
