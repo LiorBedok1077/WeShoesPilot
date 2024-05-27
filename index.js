@@ -36,7 +36,7 @@ app.post('/newOrder', async (req, res) => {
     try {
         const orderData = req.body;
 
-            const shippingTitle = orderData.shipping_lines[0].title;
+            const shippingTitle = orderData.shipping_lines.title ?? orderData.shipping_lines[0].title;
             const shippingMethod = shippingTitle.includes("שליח עד הבית") ? 1 : 2;
 
             const newOrder = new Order({
