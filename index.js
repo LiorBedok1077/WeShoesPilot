@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 var bodyParser = require('body-parser')
 var cron = require('node-cron');
-var axios = require("axios")
+var parsePhoneNumber = require('libphonenumber-js')
 
 require("dotenv").config()
 
@@ -11,6 +11,11 @@ const shopifyHeaders = {
     "Content-Type": "application/json",
     "X-Shopify-Access-Token": process.env.SHOPIFY_TOKEN
 };
+
+var sendPulseHeaders = {
+    "Content-Type": "application/json",
+    "Authorization": ""
+}
 
 // Connect to MongoDB
 mongoose.connect(process.env.DB_HOST, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -65,6 +70,7 @@ app.post('/newOrder', async (req, res) => {
             });
 
             const savedOrder = await newOrder.save();
+            if(shippingMethod == 1) sendWhatsAppStatus(savedOrder)
             console.log(savedOrder)
             res.status(201).send({ message: 'Order saved successfully'});
     } catch (error) {
@@ -77,13 +83,100 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    getSendPulseToken()
 });
 
-cron.schedule('* * * * *', () => {
+cron.schedule('0,30,45,15 * * * * *', () => {
     console.log('running a task every minute');
     checkOrdersUpdate()
   });
 
+
+const getSendPulseToken = async () => {
+    const res = await fetch('https://api.sendpulse.com/oauth/access_token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'client_credentials',
+      client_id: process.env.SENDPULSE_ID,
+      client_secret: process.env.SENDPULSE_SECRET
+    })
+  });
+  const jsonRes = await res.json()
+  console.log(jsonRes)
+  if(jsonRes.access_token) {
+    sendPulseHeaders.Authorization = `${jsonRes.token_type} ${jsonRes.access_token}`
+  }
+}
+
+const sendWhatsAppStatus = async (order) => {
+    let parsedNumber = parsePhoneNumber(order.phone, "IL")
+    if(!parsedNumber) return;
+    parsedNumber = parsedNumber.number.replace("+", "")
+    const res = await fetch('https://api.sendpulse.com/whatsapp/contacts', {
+        method: 'POST',
+        headers: sendPulseHeaders,
+        body: JSON.stringify({
+            "phone": parsedNumber,
+            "name": `${order.first_name} ${order.last_name}`,
+            "bot_id": "6653512f9c10ef96300b5cea"
+        })
+    });
+    const jsonRes = await res.json()
+    console.log(jsonRes)
+    const contactId = jsonRes.data?.id
+
+    const pickupTemplate = {
+        "name": "status_pickup",
+        "language": {
+          "code": "he"
+        },
+        "components": [
+          {
+            "type": "body",
+            "parameters": [
+              {
+                "type": "text",
+                "text": order.first_name
+              }
+            ]
+          }
+        ]
+      }
+
+      const deliveryTemplate = {
+        "name": "status_delivered",
+        "language": {
+          "code": "he"
+        },
+        "components": [
+          {
+            "type": "body",
+            "parameters": [
+              {
+                "type": "text",
+                "text": order.first_name
+              },
+              {
+                "type": "text",
+                "text": order.tracking_url ? `\nלפרטים נוספים ניתן להיכנס לדף המעקב: ${order.tracking_url}` : "‎"
+              }
+            ]
+          }
+        ]
+      }
+
+    const msgRes = await fetch('https://api.sendpulse.com/whatsapp/contacts/sendTemplate', {
+        method: 'POST',
+        headers: sendPulseHeaders,
+        body: JSON.stringify({
+            "contact_id": "665509e140b26bb8890503c0",
+            "template": order.shipping_code == 1 ? deliveryTemplate : pickupTemplate
+          })
+    });
+    const jsonMsg = await msgRes.json()
+    console.log(jsonMsg)
+}
 
 const sendTelegramMessage = (msg) => {
     const chatId = '-4258353216';
@@ -121,17 +214,21 @@ const checkOrdersUpdate = async () => {
 }
 
 const checkPickupOrder = async (order) => {
-    const metafieldsResponse = await fetch(`https://weshoes2.myshopify.com/admin/api/2024-01/orders/${order.order_id}/metafields.json`, { shopifyHeaders });
+    const metafieldsResponse = await fetch(`https://weshoes2.myshopify.com/admin/api/2023-10/orders/${order.order_id}/metafields.json`, { headers: shopifyHeaders });
     const metafieldsData = await metafieldsResponse.json();
     const statusMetafield = metafieldsData.metafields.find(m => m.key === "operational_status");
-    if(statusMetafield.value.includes("הגיע ללקוח") || tatusMetafield.value.includes("נאספה")) {
+    if(statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) {
         sendTelegramMessage("הזמנה נאספה: " + JSON.stringify(order))
+    }
+    else if(statusMetafield.value.includes("הגיע לסניף")) {
+        sendWhatsAppStatus(order)
+        sendTelegramMessage("הזמנה הגיעה לסניף: " + JSON.stringify(order))
     }
 }
 
 const checkDeliveryOrder = async (order) => {
     if(order.tracking_url) {
-        const {tracking_url} = order.fulfillments
+        const {tracking_url} = order
         fetch(tracking_url)
         .then(response => response.text())
         .then(html => {
@@ -141,11 +238,14 @@ const checkDeliveryOrder = async (order) => {
         .catch(error => console.error('Error:', error));
     }
     else {
-        const orderResponse = await fetch(`https://weshoes2.myshopify.com/admin/api/2024-01/orders/${order.order_id}.json`, { shopifyHeaders });
+        console.log("we are here")
+        const orderResponse = await fetch(`https://weshoes2.myshopify.com/admin/api/2023-10/orders/${order.order_id}.json`, { headers: shopifyHeaders });
         const orderData = await orderResponse.json();
-        if(orderData && orderData.fulfillments && orderData.fulfillments[0] && orderData.fulfillments[0].tracking_url) {
-            await Order.findByIdAndUpdate(order.id, {tracking_url: orderData.fulfillments[0].tracking_url})
-            checkDeliveryOrder(order)
+        if(orderData && orderData.order.fulfillments && orderData.order.fulfillments[0] && orderData.order.fulfillments[0].tracking_url) {
+            console.log("if passed")
+            const updateRes = await Order.findByIdAndUpdate(order.id, {tracking_url: orderData.order.fulfillments[0].tracking_url})
+            const newOrderObj = await Order.findById(updateRes.id)
+            checkDeliveryOrder(newOrderObj)
         }
     }
 }
