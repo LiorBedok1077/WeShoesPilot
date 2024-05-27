@@ -48,6 +48,7 @@ app.post('/newOrder', async (req, res) => {
     try {
         const orderData = req.body;
             sendTelegramMessage("נקלטה הזמנה חדשה: " + JSON.stringify(orderData))
+            console.log(orderData)
             const shippingTitle = orderData.shipping_lines.title ?? orderData.shipping_lines[0].title;
             const shippingMethod = shippingTitle.includes("שליח עד הבית") ? 1 : 2;
             const trackingUrl = orderData.fulfillments[0] ? orderData.fulfillments[0].tracking_url : null;
