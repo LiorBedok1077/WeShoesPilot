@@ -52,7 +52,7 @@ app.get('/', async (req, res) => {
 app.post('/newOrder', async (req, res) => {
     try {
         const orderData = req.body;
-            sendTelegramMessage("נקלטה הזמנה חדשה: " + JSON.stringify(orderData))
+            sendTelegramMessage("נקלטה הזמנה חדשה: \n" + beautifyOrder(order))
             console.log(orderData)
             const shippingTitle = orderData.shipping_lines.title ?? orderData.shipping_lines[0].title;
             const shippingMethod = shippingTitle.includes("שליח עד הבית") ? 1 : 2;
@@ -127,7 +127,7 @@ const sendWhatsAppStatus = async (order) => {
     const contactId = jsonRes.data?.id
 
     const pickupTemplate = {
-        "name": "status_pickup",
+        "name": "status_notify_pickup",
         "language": {
           "code": "he"
         },
@@ -145,7 +145,7 @@ const sendWhatsAppStatus = async (order) => {
       }
 
       const deliveryTemplate = {
-        "name": "status_delivered",
+        "name": "status_notify_delivery",
         "language": {
           "code": "he"
         },
@@ -218,11 +218,12 @@ const checkPickupOrder = async (order) => {
     const metafieldsData = await metafieldsResponse.json();
     const statusMetafield = metafieldsData.metafields.find(m => m.key === "operational_status");
     if(statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) {
-        sendTelegramMessage("הזמנה נאספה: " + JSON.stringify(order))
+        sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
+        Order.deleteOne({"_id": order._id})
     }
     else if(statusMetafield.value.includes("הגיע לסניף")) {
         sendWhatsAppStatus(order)
-        sendTelegramMessage("הזמנה הגיעה לסניף: " + JSON.stringify(order))
+        sendTelegramMessage("הזמנה הגיעה לסניף: \n" + beautifyOrder(order))
     }
 }
 
@@ -233,7 +234,10 @@ const checkDeliveryOrder = async (order) => {
         .then(response => response.text())
         .then(html => {
             const containsString = html.includes("סגור") || html.includes("אישור להניח ליד הדלת");
-            if(containsString) sendTelegramMessage("משלוח נמסר: " + JSON.stringify(order))
+            if(containsString) {
+                sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
+                Order.deleteOne({"_id": order._id})
+            }
         })
         .catch(error => console.error('Error:', error));
     }
@@ -250,3 +254,22 @@ const checkDeliveryOrder = async (order) => {
     }
 }
 
+
+const beautifyOrder = (order) => {
+    let parsedNumber = parsePhoneNumber(order.phone, "IL")
+    if(!parsedNumber) parsedNumber = order.phone;
+    else parsedNumber = parsedNumber.number.replace("+", "")
+    var justifiedItems = ""
+    order.items.forEach(oi => {justifiedItems = justifiedItems + "\n• " + oi})
+    return `
+    שם מלא: ${order.first_name} ${order.last_name}
+    מספר טלפון: ${parsedNumber}
+    שיטת משלוח: ${order.shipping_code == 1 ? "משלוח עד הבית" : "איסוף מהסניף"}
+    מוצרים שהוזמנו: ${justifiedItems}
+    קישור למעקב: ${order.tracking_url ?? "לא הוזן"}
+
+    תאריך הזמנה: ${order.date}
+    מספר הזמנה: ${order.order_number}
+    מזהה הזמנה: ${order.order_id}
+    `
+}
