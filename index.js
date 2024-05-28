@@ -129,7 +129,7 @@ const sendWhatsAppStatus = async (order) => {
     if(jsonRes.success) console.log(`WhatsApp contact created successfuly: ${order.order_number}`)
     else console.log("Error while creating WhatsApp contact: ", jsonRes)
 
-    const contactId = jsonRes.data?.id
+    const contactId = jsonRes.id
 
     const pickupTemplate = {
         "name": "status_notify_pickup_2",
