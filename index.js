@@ -203,7 +203,7 @@ const sendTelegramMessage = (msg) => {
         },
         body: JSON.stringify(params),
     })
-    .then(response => console.log("Telegram Alert Sent"))
+    .then(response => console.log(response))
     .catch(error => console.error('Error:', error));
 }
 
