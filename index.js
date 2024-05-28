@@ -53,8 +53,6 @@ app.get('/', async (req, res) => {
 app.post('/newOrder', async (req, res) => {
     try {
         const orderData = req.body;
-            
-            console.log(orderData)
             const shippingTitle = orderData.shipping_lines.title ?? orderData.shipping_lines[0].title;
             const shippingMethod = shippingTitle.includes("שליח עד הבית") ? 1 : 2;
             const trackingUrl = orderData.fulfillments[0] ? orderData.fulfillments[0].tracking_url : null;
@@ -72,7 +70,6 @@ app.post('/newOrder', async (req, res) => {
             });
 
             const savedOrder = await newOrder.save();
-            sendTelegramMessage("נקלטה הזמנה חדשה: \n" + beautifyOrder(savedOrder))
             console.log(savedOrder)
             res.status(201).send({ message: 'Order saved successfully'});
     } catch (error) {
