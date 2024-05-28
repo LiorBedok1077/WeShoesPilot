@@ -151,7 +151,7 @@ const sendWhatsAppStatus = async (order) => {
               },
               {
                 "type": "text",
-                "text": order.order_number
+                "text": `${order.order_number}`
               }
             ]
           }
@@ -173,7 +173,7 @@ const sendWhatsAppStatus = async (order) => {
               },
               {
                 "type": "text",
-                "text": order.order_number
+                "text": `${order.order_number}`
               },
               {
                 "type": "text",
