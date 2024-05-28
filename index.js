@@ -227,12 +227,14 @@ const checkPickupOrder = async (order) => {
     const metafieldsData = await metafieldsResponse.json();
     const statusMetafield = metafieldsData.metafields.find(m => m.key === "operational_status");
     if(statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) {
-        sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
+        sendTelegramMessage("הזמנה נאספה: " + beautifyOrder(order))
+        console.log(beautifyOrder(order))
         // Order.deleteOne({"_id": order._id})
     }
     else if(statusMetafield.value.includes("הגיע לסניף")) {
         sendWhatsAppStatus(order)
-        sendTelegramMessage("הזמנה הגיעה לסניף: \n" + beautifyOrder(order))
+        sendTelegramMessage("הזמנה הגיעה לסניף: " + beautifyOrder(order))
+        console.log(beautifyOrder(order))
     }
 }
 
@@ -244,7 +246,8 @@ const checkDeliveryOrder = async (order) => {
         .then(html => {
             const containsString = html.includes("סגור") || html.includes("אישור להניח ליד הדלת");
             if(containsString) {
-                sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
+                console.log(beautifyOrder(order))
+                sendTelegramMessage("משלוח נמסר: " + beautifyOrder(order))
                 // Order.deleteOne({"_id": order._id})
             }
         })
