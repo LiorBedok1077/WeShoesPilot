@@ -85,7 +85,7 @@ app.listen(PORT, () => {
     getSendPulseToken()
 });
 
-cron.schedule('0,5 * * * *', () => {
+cron.schedule('0,8 * * * *', () => {
     console.log('running a task every minute');
     getSendPulseToken()
     checkOrdersUpdate()
