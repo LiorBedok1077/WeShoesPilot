@@ -52,7 +52,7 @@ app.get('/', async (req, res) => {
 app.post('/newOrder', async (req, res) => {
     try {
         const orderData = req.body;
-            sendTelegramMessage("נקלטה הזמנה חדשה: \n" + beautifyOrder(orderData))
+            
             console.log(orderData)
             const shippingTitle = orderData.shipping_lines.title ?? orderData.shipping_lines[0].title;
             const shippingMethod = shippingTitle.includes("שליח עד הבית") ? 1 : 2;
@@ -70,6 +70,7 @@ app.post('/newOrder', async (req, res) => {
             });
 
             const savedOrder = await newOrder.save();
+            sendTelegramMessage("נקלטה הזמנה חדשה: \n" + beautifyOrder(savedOrder))
             if(shippingMethod == 1) sendWhatsAppStatus(savedOrder)
             console.log(savedOrder)
             res.status(201).send({ message: 'Order saved successfully'});
