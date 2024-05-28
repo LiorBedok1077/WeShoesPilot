@@ -148,6 +148,10 @@ const sendWhatsAppStatus = async (order) => {
               {
                 "type": "text",
                 "text": branchMetafield
+              },
+              {
+                "type": "text",
+                "text": order.order_number
               }
             ]
           }
@@ -169,7 +173,11 @@ const sendWhatsAppStatus = async (order) => {
               },
               {
                 "type": "text",
-                "text": order.tracking_url ? `\nלפרטים נוספים ניתן להיכנס לדף המעקב: ${order.tracking_url}` : "‎"
+                "text": order.order_number
+              },
+              {
+                "type": "text",
+                "text": order.tracking_url
               }
             ]
           }
