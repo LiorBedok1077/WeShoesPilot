@@ -133,7 +133,7 @@ const sendWhatsAppStatus = async (order) => {
     const contactId = jsonRes.data?.id
 
     const pickupTemplate = {
-        "name": "status_notify_pickup",
+        "name": "status_notify_pickup_1",
         "language": {
           "code": "he"
         },
@@ -159,7 +159,7 @@ const sendWhatsAppStatus = async (order) => {
       }
 
       const deliveryTemplate = {
-        "name": "status_notify_delivery",
+        "name": "status_notify_delivery_1",
         "language": {
           "code": "he"
         },
