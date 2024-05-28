@@ -112,6 +112,10 @@ const getSendPulseToken = async () => {
 const sendWhatsAppStatus = async (order) => {
     let parsedNumber = parsePhoneNumber(order.phone, "IL")
     if(!parsedNumber) return;
+    const metafieldsResponse = await fetch(`https://weshoes2.myshopify.com/admin/api/2023-10/orders/${order.order_id}/metafields.json`, { headers: shopifyHeaders });
+    const metafieldsData = await metafieldsResponse.json();
+    let branchMetafield = metafieldsData.metafields.find(m => m.key === "supply_branch_name");
+    if(!branchMetafield) branchMetafield = ""
     parsedNumber = parsedNumber.number.replace("+", "")
     const res = await fetch('https://api.sendpulse.com/whatsapp/contacts', {
         method: 'POST',
@@ -138,6 +142,10 @@ const sendWhatsAppStatus = async (order) => {
               {
                 "type": "text",
                 "text": order.first_name
+              },
+              {
+                "type": "text",
+                "text": branchMetafield
               }
             ]
           }
@@ -219,7 +227,7 @@ const checkPickupOrder = async (order) => {
     const statusMetafield = metafieldsData.metafields.find(m => m.key === "operational_status");
     if(statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) {
         sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
-        Order.deleteOne({"_id": order._id})
+        // Order.deleteOne({"_id": order._id})
     }
     else if(statusMetafield.value.includes("הגיע לסניף")) {
         sendWhatsAppStatus(order)
@@ -236,7 +244,7 @@ const checkDeliveryOrder = async (order) => {
             const containsString = html.includes("סגור") || html.includes("אישור להניח ליד הדלת");
             if(containsString) {
                 sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
-                Order.deleteOne({"_id": order._id})
+                // Order.deleteOne({"_id": order._id})
             }
         })
         .catch(error => console.error('Error:', error));
