@@ -87,7 +87,7 @@ app.listen(PORT, () => {
     getSendPulseToken()
 });
 
-cron.schedule('1 * * * * *', () => {
+cron.schedule('* 5 * * *', () => {
     console.log('running a task every minute');
     checkOrdersUpdate()
   });
@@ -203,7 +203,7 @@ const sendTelegramMessage = (msg) => {
         },
         body: JSON.stringify(params),
     })
-    .then(response => console.log(response))
+    .then(response => console.log("Telegram Message sent"))
     .catch(error => console.error('Error:', error));
 }
 
