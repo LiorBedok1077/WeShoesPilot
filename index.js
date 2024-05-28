@@ -70,7 +70,7 @@ app.post('/newOrder', async (req, res) => {
             });
 
             const savedOrder = await newOrder.save();
-            console.log(savedOrder)
+            console.log("New Order Detected: ", savedOrder)
             res.status(201).send({ message: 'Order saved successfully'});
     } catch (error) {
         console.log(error)
@@ -102,7 +102,6 @@ const getSendPulseToken = async () => {
     })
   });
   const jsonRes = await res.json()
-  console.log(jsonRes)
   if(jsonRes.access_token) {
     sendPulseHeaders.Authorization = `${jsonRes.token_type} ${jsonRes.access_token}`
   }
@@ -126,7 +125,9 @@ const sendWhatsAppStatus = async (order) => {
         })
     });
     const jsonRes = await res.json()
-    console.log(jsonRes)
+    if(jsonRes.success) console.log(`WhatsApp contact created successfuly: ${order.order_number}`)
+    else console.log("Error while creating WhatsApp contact: ", jsonRes)
+
     const contactId = jsonRes.data?.id
 
     const pickupTemplate = {
@@ -189,7 +190,8 @@ const sendWhatsAppStatus = async (order) => {
           })
     });
     const jsonMsg = await msgRes.json()
-    console.log(jsonMsg)
+    if(jsonMsg.success) console.log(`WhatsApp Sent Successfuly: ${order.order_number}`)
+    else console.log("Error while sending WhatApp message: ", jsonMsg)
 }
 
 const sendTelegramMessage = (msg) => {
@@ -208,7 +210,7 @@ const sendTelegramMessage = (msg) => {
         },
         body: JSON.stringify(params),
     })
-    .then(response => console.log("Telegram Message sent"))
+    .then(response => console.log("Telegram signal sent"))
     .catch(error => console.error('Error:', error));
 }
 
@@ -234,6 +236,7 @@ const checkPickupOrder = async (order) => {
     if(statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) {
         sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
         Order.deleteOne({"_id": order._id})
+        console.log("Pickup order deleted: ", order.order_number)
     }
     else if(statusMetafield.value.includes("הגיע לסניף")) {
         sendWhatsAppStatus(order)
@@ -250,6 +253,7 @@ const checkDeliveryOrder = async (order) => {
             if(html.includes("סגור") || html.includes("אישור להניח ליד הדלת")) {
                 sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
                 Order.deleteOne({"_id": order._id})
+                console.log("Delivery order deleted: ", order.order_number)
             }
             else if(html.includes("כניסה למחסן מיון") && !order.delivery_hint_sent) {
                 Order.findByIdAndUpdate(order._id, {delivery_hint_sent: true})
