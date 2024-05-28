@@ -147,7 +147,7 @@ const sendWhatsAppStatus = async (order) => {
               },
               {
                 "type": "text",
-                "text": branchMetafield
+                "text": branchMetafield || "WeShoes"
               },
               {
                 "type": "text",
@@ -157,7 +157,7 @@ const sendWhatsAppStatus = async (order) => {
           }
         ]
       }
-
+      console.log(pickupTemplate)
       const deliveryTemplate = {
         "name": "status_notify_delivery_1",
         "language": {
