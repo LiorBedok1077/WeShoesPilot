@@ -188,7 +188,7 @@ const sendWhatsAppStatus = async (order) => {
 }
 
 const sendTelegramMessage = (msg) => {
-    const chatId = '-4258353216';
+    const chatId = '-1002209999103';
     const url = `https://api.telegram.org/bot${process.env.TG_TOKEN}/sendMessage`;
 
     const params = {
@@ -227,14 +227,12 @@ const checkPickupOrder = async (order) => {
     const metafieldsData = await metafieldsResponse.json();
     const statusMetafield = metafieldsData.metafields.find(m => m.key === "operational_status");
     if(statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) {
-        sendTelegramMessage("הזמנה נאספה: ")
-        console.log(beautifyOrder(order))
+        sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
         // Order.deleteOne({"_id": order._id})
     }
     else if(statusMetafield.value.includes("הגיע לסניף")) {
         sendWhatsAppStatus(order)
-        sendTelegramMessage("הזמנה הגיעה לסניף: ")
-        console.log(beautifyOrder(order))
+        sendTelegramMessage("הזמנה הגיעה לסניף: \n" + beautifyOrder(order))
     }
 }
 
@@ -246,8 +244,7 @@ const checkDeliveryOrder = async (order) => {
         .then(html => {
             const containsString = html.includes("סגור") || html.includes("אישור להניח ליד הדלת");
             if(containsString) {
-                console.log(beautifyOrder(order))
-                sendTelegramMessage("משלוח נמסר: ")
+                sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
                 // Order.deleteOne({"_id": order._id})
             }
         })
