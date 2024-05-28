@@ -157,7 +157,20 @@ const sendWhatsAppStatus = async (order) => {
           }
         ]
       }
-      console.log(pickupTemplate)
+      console.log([
+        {
+          "type": "text",
+          "text": order.first_name
+        },
+        {
+          "type": "text",
+          "text": branchMetafield || "WeShoes"
+        },
+        {
+          "type": "text",
+          "text": `${order.order_number}`
+        }
+      ])
       const deliveryTemplate = {
         "name": "status_notify_delivery_1",
         "language": {
