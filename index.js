@@ -66,7 +66,7 @@ app.post('/newOrder', async (req, res) => {
                 items: orderData.line_items.map(item => item.name),
                 shipping_code: shippingMethod,
                 order_id: orderData.id,
-                order_number: orderData.order_number,
+                order_number: orderData.name,
                 tracking_url: trackingUrl,
                 delivery_hint_sent: false
             });
@@ -147,7 +147,7 @@ const sendWhatsAppStatus = async (order) => {
               },
               {
                 "type": "text",
-                "text": branchMetafield || "WeShoes"
+                "text": branchMetafield.value || "WeShoes"
               },
               {
                 "type": "text",
@@ -157,20 +157,6 @@ const sendWhatsAppStatus = async (order) => {
           }
         ]
       }
-      console.log([
-        {
-          "type": "text",
-          "text": order.first_name
-        },
-        {
-          "type": "text",
-          "text": branchMetafield || "WeShoes"
-        },
-        {
-          "type": "text",
-          "text": `${order.order_number}`
-        }
-      ])
       const deliveryTemplate = {
         "name": "status_notify_delivery_1",
         "language": {
@@ -201,7 +187,7 @@ const sendWhatsAppStatus = async (order) => {
         method: 'POST',
         headers: sendPulseHeaders,
         body: JSON.stringify({
-            "contact_id": "665509e140b26bb8890503c0",
+            "contact_id": contactId,
             "template": order.shipping_code == 1 ? deliveryTemplate : pickupTemplate
           })
     });
@@ -250,7 +236,7 @@ const checkPickupOrder = async (order) => {
     const statusMetafield = metafieldsData.metafields.find(m => m.key === "operational_status");
     if(statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) {
         sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
-        // Order.deleteOne({"_id": order._id})
+        Order.deleteOne({"_id": order._id})
     }
     else if(statusMetafield.value.includes("הגיע לסניף")) {
         sendWhatsAppStatus(order)
@@ -266,7 +252,7 @@ const checkDeliveryOrder = async (order) => {
         .then(html => {
             if(html.includes("סגור") || html.includes("אישור להניח ליד הדלת")) {
                 sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
-                // Order.deleteOne({"_id": order._id})
+                Order.deleteOne({"_id": order._id})
             }
             else if(html.includes("כניסה למחסן מיון") && !order.delivery_hint_sent) {
                 Order.findByIdAndUpdate(order._id, {delivery_hint_sent: true})
