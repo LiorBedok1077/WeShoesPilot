@@ -52,7 +52,7 @@ app.get('/', async (req, res) => {
 app.post('/newOrder', async (req, res) => {
     try {
         const orderData = req.body;
-            sendTelegramMessage("נקלטה הזמנה חדשה: \n" + beautifyOrder(order))
+            sendTelegramMessage("נקלטה הזמנה חדשה: \n" + beautifyOrder(orderData))
             console.log(orderData)
             const shippingTitle = orderData.shipping_lines.title ?? orderData.shipping_lines[0].title;
             const shippingMethod = shippingTitle.includes("שליח עד הבית") ? 1 : 2;
@@ -143,10 +143,10 @@ const sendWhatsAppStatus = async (order) => {
                 "type": "text",
                 "text": order.first_name
               },
-              {
-                "type": "text",
-                "text": branchMetafield
-              }
+            //   {
+            //     "type": "text",
+            //     "text": branchMetafield
+            //   }
             ]
           }
         ]
