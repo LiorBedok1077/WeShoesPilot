@@ -32,6 +32,7 @@ const orderSchema = new mongoose.Schema({
     order_id: String,
     order_number: String,
     tracking_url: String,
+    delivery_hint_sent: Boolean,
     date: { type: Date, default: Date.now }
 });
 
@@ -67,11 +68,11 @@ app.post('/newOrder', async (req, res) => {
                 order_id: orderData.id,
                 order_number: orderData.order_number,
                 tracking_url: trackingUrl,
+                delivery_hint_sent: false
             });
 
             const savedOrder = await newOrder.save();
             sendTelegramMessage("נקלטה הזמנה חדשה: \n" + beautifyOrder(savedOrder))
-            if(shippingMethod == 1) sendWhatsAppStatus(savedOrder)
             console.log(savedOrder)
             res.status(201).send({ message: 'Order saved successfully'});
     } catch (error) {
@@ -87,7 +88,7 @@ app.listen(PORT, () => {
     getSendPulseToken()
 });
 
-cron.schedule('* 5 * * *', () => {
+cron.schedule('* * * * *', () => {
     console.log('running a task every minute');
     checkOrdersUpdate()
   });
@@ -144,10 +145,10 @@ const sendWhatsAppStatus = async (order) => {
                 "type": "text",
                 "text": order.first_name
               },
-            //   {
-            //     "type": "text",
-            //     "text": branchMetafield
-            //   }
+              {
+                "type": "text",
+                "text": branchMetafield
+              }
             ]
           }
         ]
@@ -242,10 +243,13 @@ const checkDeliveryOrder = async (order) => {
         fetch(tracking_url)
         .then(response => response.text())
         .then(html => {
-            const containsString = html.includes("סגור") || html.includes("אישור להניח ליד הדלת");
-            if(containsString) {
+            if(html.includes("סגור") || html.includes("אישור להניח ליד הדלת")) {
                 sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
                 // Order.deleteOne({"_id": order._id})
+            }
+            else if(html.includes("כניסה למחסן מיון") && !order.delivery_hint_sent) {
+                Order.findByIdAndUpdate(order._id, {delivery_hint_sent: true})
+                sendWhatsAppStatus(order)
             }
         })
         .catch(error => console.error('Error:', error));
@@ -256,8 +260,8 @@ const checkDeliveryOrder = async (order) => {
         const orderData = await orderResponse.json();
         if(orderData && orderData.order.fulfillments && orderData.order.fulfillments[0] && orderData.order.fulfillments[0].tracking_url) {
             console.log("if passed")
-            const updateRes = await Order.findByIdAndUpdate(order.id, {tracking_url: orderData.order.fulfillments[0].tracking_url})
-            const newOrderObj = await Order.findById(updateRes.id)
+            const updateRes = await Order.findByIdAndUpdate(order._id, {tracking_url: orderData.order.fulfillments[0].tracking_url})
+            const newOrderObj = await Order.findById(updateRes._id)
             checkDeliveryOrder(newOrderObj)
         }
     }
