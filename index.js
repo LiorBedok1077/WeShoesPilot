@@ -236,7 +236,7 @@ const checkPickupOrder = async (order) => {
     const statusMetafield = metafieldsData.metafields.find(m => m.key === "operational_status");
     if(statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) {
         sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
-        Order.deleteOne({"_id": order._id})
+        await Order.deleteOne({"_id": order._id})
         console.log("Pickup order deleted: ", order.order_number)
     }
     else if(statusMetafield.value.includes("הגיע לסניף")) {
