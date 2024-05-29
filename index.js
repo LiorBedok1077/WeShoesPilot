@@ -132,7 +132,7 @@ const sendWhatsAppStatus = async (order) => {
     const contactId = jsonRes.id
 
     const pickupTemplate = {
-        "name": "status_notify_pickup_2",
+        "name": "status_notify_pickup_active",
         "language": {
           "code": "he"
         },
@@ -157,7 +157,7 @@ const sendWhatsAppStatus = async (order) => {
         ]
       }
       const deliveryTemplate = {
-        "name": "status_notify_delivery_3",
+        "name": "status_notify_delivery_active",
         "language": {
           "code": "he"
         },
@@ -250,14 +250,14 @@ const checkDeliveryOrder = async (order) => {
         const {tracking_url} = order
         fetch(tracking_url)
         .then(response => response.text())
-        .then(html => {
+        .then(async (html) => {
             if(html.includes("סגור") || html.includes("אישור להניח ליד הדלת")) {
                 sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
-                Order.deleteOne({"_id": order._id})
+                await Order.deleteOne({"_id": order._id})
                 console.log("Delivery order deleted: ", order.order_number)
             }
             else if(html.includes("כניסה למחסן מיון") && !order.delivery_hint_sent) {
-                Order.findByIdAndUpdate(order._id, {delivery_hint_sent: true})
+                await Order.updateOne({"_id": order._id}, {delivery_hint_sent: true})
                 sendWhatsAppStatus(order)
             }
         })
