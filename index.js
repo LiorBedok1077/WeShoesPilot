@@ -128,7 +128,7 @@ const sendWhatsAppStatus = async (order, send=true) => {
         body: JSON.stringify({
             "phone": parsedNumber,
             "name": `${order.first_name} ${order.last_name}`,
-            "bot_id": "6653512f9c10ef96300b5cea"
+            "bot_id": "665836be43123e45450f38ca"
         })
     });
     const jsonRes = await res.json()
@@ -241,10 +241,10 @@ const checkPickupOrder = async (order) => {
     const metafieldsData = await metafieldsResponse.json();
     const statusMetafield = metafieldsData.metafields.find(m => m.key === "operational_status");
     if((statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) && order.delivery_hint_sent) {
-        // sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
-        // sendWhatsAppStatus(order, false);
-        // await Order.deleteOne({"_id": order._id})
-        // console.log("Pickup order deleted: ", order.order_number)
+        sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
+        sendWhatsAppStatus(order, false);
+        await Order.deleteOne({"_id": order._id})
+        console.log("Pickup order deleted: ", order.order_number)
     }
     else if(statusMetafield.value.includes("הגיע לסניף") && !order.delivery_hint_sent) {
         sendWhatsAppStatus(order)
@@ -259,10 +259,10 @@ const checkDeliveryOrder = async (order) => {
         .then(response => response.text())
         .then(async (html) => {
             if((html.includes("סגור") || html.includes("אישור להניח ליד הדלת")) && order.delivery_hint_sent) {
-                // sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
-                // sendWhatsAppStatus(order, false);
-                // await Order.deleteOne({"_id": order._id})
-                // console.log("Delivery order deleted: ", order.order_number)
+                sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
+                sendWhatsAppStatus(order, false);
+                await Order.deleteOne({"_id": order._id})
+                console.log("Delivery order deleted: ", order.order_number)
             }
             else if(html.includes("כניסה למחסן מיון") && !order.delivery_hint_sent) {
                 await Order.updateOne({"_id": order._id}, {delivery_hint_sent: true})
