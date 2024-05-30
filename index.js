@@ -85,8 +85,14 @@ app.listen(PORT, () => {
     getSendPulseToken()
 });
 
-cron.schedule('1,30 * * * *', () => {
-    console.log('running a task every minute');
+cron.schedule('0,30 7-16 * * 5', () => {
+    console.log('running a task in friday');
+    getSendPulseToken()
+    checkOrdersUpdate()
+  });
+
+cron.schedule('0,30 7-19 * * 0,1,2,3,4', () => {
+    console.log('running a task between 7-19');
     getSendPulseToken()
     checkOrdersUpdate()
   });
@@ -234,14 +240,14 @@ const checkPickupOrder = async (order) => {
     const metafieldsResponse = await fetch(`https://weshoes2.myshopify.com/admin/api/2023-10/orders/${order.order_id}/metafields.json`, { headers: shopifyHeaders });
     const metafieldsData = await metafieldsResponse.json();
     const statusMetafield = metafieldsData.metafields.find(m => m.key === "operational_status");
-    if(statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) {
+    if((statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) && order.delivery_hint_sent) {
         sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
         await Order.deleteOne({"_id": order._id})
         console.log("Pickup order deleted: ", order.order_number)
     }
-    else if(statusMetafield.value.includes("הגיע לסניף")) {
+    else if(statusMetafield.value.includes("הגיע לסניף") && !order.delivery_hint_sent) {
         sendWhatsAppStatus(order)
-        sendTelegramMessage("הזמנה הגיעה לסניף: \n" + beautifyOrder(order))
+        await Order.updateOne({"_id": order._id}, {delivery_hint_sent: true})
     }
 }
 
@@ -251,7 +257,7 @@ const checkDeliveryOrder = async (order) => {
         fetch(tracking_url)
         .then(response => response.text())
         .then(async (html) => {
-            if(html.includes("סגור") || html.includes("אישור להניח ליד הדלת")) {
+            if((html.includes("סגור") || html.includes("אישור להניח ליד הדלת")) && order.delivery_hint_sent) {
                 sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
                 await Order.deleteOne({"_id": order._id})
                 console.log("Delivery order deleted: ", order.order_number)
