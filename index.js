@@ -85,17 +85,17 @@ app.listen(PORT, () => {
     getSendPulseToken()
 });
 
-cron.schedule('0,30 7-16 * * 5', () => {
-    console.log('running a task in friday');
-    getSendPulseToken()
-    checkOrdersUpdate()
-  });
+// cron.schedule('0,30 7-16 * * 5', () => {
+//     console.log('running a task in friday');
+//     getSendPulseToken()
+//     checkOrdersUpdate()
+//   });
 
-cron.schedule('14,45 7-19 * * 0,1,2,3,4', () => {
-    console.log('running a task between 7-19');
-    getSendPulseToken()
-    checkOrdersUpdate()
-  });
+// cron.schedule('14,45 7-19 * * 0,1,2,3,4', () => {
+//     console.log('running a task between 7-19');
+//     getSendPulseToken()
+//     checkOrdersUpdate()
+//   });
 
 
 const getSendPulseToken = async () => {
