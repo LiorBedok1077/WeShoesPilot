@@ -97,6 +97,11 @@ cron.schedule('14,45 7-19 * * 0,1,2,3,4', () => {
     checkOrdersUpdate()
   });
 
+  cron.schedule('* * * * *', () => {
+    console.log('running a task between 7-19');
+    getSendPulseToken()
+    checkOrdersUpdate()
+  });
 
 const getSendPulseToken = async () => {
     const res = await fetch('https://api.sendpulse.com/oauth/access_token', {
