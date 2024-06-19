@@ -240,13 +240,13 @@ const checkPickupOrder = async (order) => {
     const metafieldsData = await metafieldsResponse.json();
     const statusMetafield = metafieldsData.metafields.find(m => m.key === "operational_status");
     if((statusMetafield.value.includes("הגיע ללקוח") || statusMetafield.value.includes("נאספה")) && order.delivery_hint_sent) {
-        // sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
-        // sendWhatsAppStatus(order, false);
+        sendTelegramMessage("הזמנה נאספה: \n" + beautifyOrder(order))
+        sendWhatsAppStatus(order, false);
         await Order.deleteOne({"_id": order._id})
         console.log("Pickup order deleted: ", order.order_number)
     }
     else if(statusMetafield.value.includes("הגיע לסניף") && !order.delivery_hint_sent) {
-        // sendWhatsAppStatus(order)
+        sendWhatsAppStatus(order)
         await Order.updateOne({"_id": order._id}, {delivery_hint_sent: true})
     }
 }
@@ -258,14 +258,14 @@ const checkDeliveryOrder = async (order) => {
         .then(response => response.text())
         .then(async (html) => {
             if((html.includes("סגור") || html.includes("אישור להניח ליד הדלת")) && order.delivery_hint_sent) {
-                // sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
-                // sendWhatsAppStatus(order, false);
+                sendTelegramMessage("משלוח נמסר: \n" + beautifyOrder(order))
+                sendWhatsAppStatus(order, false);
                 await Order.deleteOne({"_id": order._id})
                 console.log("Delivery order deleted: ", order.order_number)
             }
             else if(html.includes("כניסה למחסן מיון") && !order.delivery_hint_sent) {
                 await Order.updateOne({"_id": order._id}, {delivery_hint_sent: true})
-                // sendWhatsAppStatus(order)
+                sendWhatsAppStatus(order)
                 sendWhatsAppStatus(order, false)
             }
         })
